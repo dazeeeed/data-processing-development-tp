@@ -18,3 +18,7 @@ libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % scalaLo
 
 // Test
 libraryDependencies +=  "org.scalatest" %% "scalatest" % scalaTest % "test"
+
+// Get rid of Exception: sbt.TrapExitSecurityException thrown from
+// the UncaughtExceptionHandler in thread "run-main-0"
+trapExit := false
