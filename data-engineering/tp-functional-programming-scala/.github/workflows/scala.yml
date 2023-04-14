@@ -20,3 +20,4 @@ jobs:
         distribution: 'adopt'
     - name: Run tests
       run: sbt test
+
