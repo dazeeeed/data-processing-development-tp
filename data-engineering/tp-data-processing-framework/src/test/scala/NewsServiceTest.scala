@@ -32,6 +32,10 @@ class NewsServiceTest extends AnyFunSuite {
     assert(NewsService.getNumberOfNews(fakeListNews) == 3)
   }
 
+  test("getNumberOfNews - reverse") {
+    assert(NewsService.getNumberOfNews(fakeListNews) != 4)
+  }
+
   test("filterNews") {
     val input = NewsService.filterNews(fakeListNews).collect()
     val output = Array(newsClimate)

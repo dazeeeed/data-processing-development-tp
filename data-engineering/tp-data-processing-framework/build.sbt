@@ -34,3 +34,15 @@ libraryDependencies += ("org.apache.spark" %% "spark-sql" % sparkVersion)
 dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.12.6.1"
 
 libraryDependencies += "org.postgresql" % "postgresql" % "42.2.5"
+
+// Fix java.lang.IllegalAccessError: class org.apache.spark.storage.StorageUtils$ (in unnamed module @0x449799a5) cannot
+// access class sun.nio.ch.DirectBuffer (in module java.base) because module java.base does not export sun.nio.ch
+// to unnamed module @0x449799a5
+//fork := true
+//javaOptions += "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
+
+//excludeDependencies += "org.apache.hadoop" % "hadoop-client" % "*"
+//fork := true
+//javaOptions ++= Seq(
+//	"--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
+//)

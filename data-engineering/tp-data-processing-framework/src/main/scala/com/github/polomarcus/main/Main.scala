@@ -6,58 +6,73 @@ import com.github.polomarcus.utils.{ClimateService, NewsService, SparkService}
 import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 
 object Main {
-  def main(args: Array[String]) {
-    val logger = Logger(this.getClass)
-    logger.info("Used `sbt run` to start the app")
+	def main(args: Array[String]) {
+		val logger = Logger(this.getClass)
+		logger.info("Used `sbt run` to start the app")
 
-    // This is our Spark starting point
-    // Open file "src/main/scala/utils/SparkService.scala"
-    // Read more about it here : https://spark.apache.org/docs/latest/sql-getting-started.html#starting-point-sparksession
-    val spark = SparkService.getAndConfigureSparkSession()
-    import spark.implicits._
+		// This is our Spark starting point
+		// Open file "src/main/scala/utils/SparkService.scala"
+		// Read more about it here : https://spark.apache.org/docs/latest/sql-getting-started.html#starting-point-sparksession
+		val spark = SparkService.getAndConfigureSparkSession()
+		import spark.implicits._
 
-    // Read a JSON data source with the path "./data-news-json"
-    // Tips : https://spark.apache.org/docs/latest/sql-data-sources-json.html
-    val pathToJsonData = "./data-news-json/"
-    val newsDataframe: DataFrame = ??? //@TODO
+		// Read a JSON data source with the path "./data-news-json"
+		// Tips : https://spark.apache.org/docs/latest/sql-data-sources-json.html
+		val pathToJsonData = "./data-news-json/"
+//		val pathToJsonData = ".\\data-news-json\\media=TF1\\year=2022\\month=1\\"
+		val newsDataframe: DataFrame = spark.read.json(pathToJsonData)
 
-    // To type our dataframe as News, we can use the Dataset API : https://spark.apache.org/docs/latest/sql-getting-started.html#creating-datasets
-    val newsDatasets: Dataset[News] = NewsService.read(pathToJsonData)
+		// To type our dataframe as News, we can use the Dataset API : https://spark.apache.org/docs/latest/sql-getting-started.html#creating-datasets
+		val newsDatasets: Dataset[News] = NewsService.read(pathToJsonData)
 
-    // print the dataset schema - tips : https://spark.apache.org/docs/latest/sql-getting-started.html#untyped-dataset-operations-aka-dataframe-operations
-    //@TODO newsDatasets.???
+		// print the dataset schema - tips : https://spark.apache.org/docs/latest/sql-getting-started.html#untyped-dataset-operations-aka-dataframe-operations
+		newsDatasets.show()
 
-    // Show the first 10 elements - tips : https://spark.apache.org/docs/latest/sql-getting-started.html#creating-dataframes
-    //@TODO newsDatasets.???
+		// Show the first 10 elements - tips : https://spark.apache.org/docs/latest/sql-getting-started.html#creating-dataframes
+		newsDatasets.show(10)
 
-    // Enrich the dataset by apply the ClimateService.isClimateRelated function to the title and the description of a news
-    // a assign this value to the "containsWordGlobalWarming" attribute
-    val enrichedDataset = NewsService.enrichNewsWithClimateMetadata(newsDatasets)
+		// Enrich the dataset by apply the ClimateService.isClimateRelated function to the title and the description of a news
+		// a assign this value to the "containsWordGlobalWarming" attribute
+		val enrichedDataset = NewsService.enrichNewsWithClimateMetadata(newsDatasets)
 
-    // From now, we'll use only the Dataset API as it's more convenient
-    val filteredNewsAboutClimate = NewsService.filterNews(enrichedDataset)
-    // Count how many tv news we have in our data source
-    val count = NewsService.getNumberOfNews(newsDatasets)
-    logger.info(s"We have ${count} news in our dataset")
-
-
-    // Show how many news we have talking about climate change compare to others news (not related climate)
-    // Tips: use a groupBy
+		// From now, we'll use only the Dataset API as it's more convenient
+		val filteredNewsAboutClimate = NewsService.filterNews(enrichedDataset)
+		// Count how many tv news we have in our data source
+		val count = NewsService.getNumberOfNews(newsDatasets)
+		logger.info(s"We have ${count} news in our dataset")
 
 
-    // Use SQL to query a "news" table - look at : https://spark.apache.org/docs/latest/sql-getting-started.html#running-sql-queries-programmatically
+		// Show how many news we have talking about climate change compare to others news (not related climate)
+		// Tips: use a groupBy
+		val climateRelatedCount = enrichedDataset.groupBy("containsWordGlobalWarming").count()
+		climateRelatedCount.show()
+
+		// Use SQL to query a "news" table - look at : https://spark.apache.org/docs/latest/sql-getting-started.html#running-sql-queries-programmatically
+		// Register the dataset as a SQL temporary view
+		newsDatasets.createOrReplaceTempView("news")
+
+		logger.info("Same result using Spark SQL Query")
+		val sqlResult = spark.sql("SELECT containsWordGlobalWarming, count(*) as news_count FROM news " +
+			"GROUP BY containsWordGlobalWarming")
+		sqlResult.show()
+
+		// Use strongly typed dataset to be sure to not introduce a typo to your SQL Query
+		// Tips : https://stackoverflow.com/a/46514327/3535853
+		// Get results related to global warming
+		val stronglyTypedGlobalWarmingNewsCount = newsDatasets.filter(_.containsWordGlobalWarming).count()
+		logger.info(s"Number of global warming related news using dataset strong typing:" +
+			s" ${stronglyTypedGlobalWarmingNewsCount}")
 
 
-    // Use strongly typed dataset to be sure to not introduce a typo to your SQL Query
-    // Tips : https://stackoverflow.com/a/46514327/3535853
+		// Save it as a columnar format with Parquet with a partition by date and media
+		// Learn about Parquet : https://spark.apache.org/docs/3.2.1/sql-data-sources-parquet.html
+		// Learn about partition : https://spark.apache.org/docs/3.2.1/sql-data-sources-load-save-functions.html#bucketing-sorting-and-partitioning
+		newsDatasets.write.partitionBy("media", "year", "month", "day").parquet("./new_data/")
 
-
-    // Save it as a columnar format with Parquet with a partition by date and media
-    // Learn about Parquet : https://spark.apache.org/docs/3.2.1/sql-data-sources-parquet.html
-    // Learn about partition : https://spark.apache.org/docs/3.2.1/sql-data-sources-load-save-functions.html#bucketing-sorting-and-partitioning
-
-    logger.info("Stopping the app")
-    System.exit(0)
-  }
+		// Stop spark context without errors
+		spark.stop()
+		logger.info("Stopping the app")
+		System.exit(0)
+	}
 }
 
