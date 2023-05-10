@@ -27,10 +27,19 @@ b015e1d06372   confluentinc/cp-kafka:7.1.3       "/etc/confluent/dock…"   10 s
 ### Kafka User Interface - Conduktor
 Download and install : https://www.conduktor.io/download/
 
-0. Using Conduktor, create a topic "mytopic"
-1. Find the `lyrics` topic
-2. Read the first 10 messages of this topic
-3. Using Conduktor, Produce 3 messages into it
+Using Conduktor, connect to **your existing docker kafka cluster** with `localhost:9092` and name : "Docker Cluster"
+--> do not click on the blue button "Start local Kafka cluster" but on "New kafka cluster".
+
+0. Using Conduktor, create a topic "mytopic" with 5 partitions
+1. Find the `mytopic` topic on Conduktor and its differents configs (ISR, Replication Factor...)
+2. Produce 10 messages (without a key) into it and read them
+3. Look on which topic's partitions they are located.
+4. Send another 10 messages but with a key called "my key"
+5. Look again on which topic's partitions they are located.
+
+Questions:
+* [ ] When should we use a key when producing a message into Kafka ? What are the risks ? [Help](https://stackoverflow.com/a/61912094/3535853)
+* [ ] How does the default partitioner (sticky partition) work with kafka ? [Help1](https://www.confluent.io/fr-fr/blog/apache-kafka-producer-improvements-sticky-partitioner/) and [Help2](https://www.conduktor.io/kafka/producer-default-partitioner-and-sticky-partitioner#Sticky-Partitioner-(Kafka-%E2%89%A5-2.4)-3)
 
 #### Command CLI
 1. Connect to your kafka cluster with 2 command-line-interface (CLI)
@@ -38,7 +47,7 @@ Download and install : https://www.conduktor.io/download/
 Using [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/#description)
 
 ```
-docker exec -ti tp-docker-kafka_kafka1_1 bash
+docker exec -ti tp-docker-kafka-kafka1-1 bash
 > pwd
 ```
 
@@ -70,7 +79,7 @@ Pay attention to the `KAFKA_ADVERTISED_LISTENERS` config from the docker-compose
 6. stop reading
 7. Keep sending some messages to the topic
 
-#### Partition 
+#### Partition - consumer group / bookmark
 1. Check consumer group with `kafka-console-consumer` : https://kafka.apache.org/documentation/#basic_ops_consumer_group
 * notice if there is [lag](https://univalence.io/blog/articles/kafka-et-les-groupes-de-consommateurs/) for your group  
 **By default seems to be no consumer groups neither by using console command and also looking at Conduktor.**
@@ -85,11 +94,11 @@ it does not show any messages.
 4. Recheck consumer group
 
 #### Replication - High Availability
-0. use `docker-compose-multiple-kafka.yml` to start 2 more brokers  
-**docker compose -f .\docker-compose-mutiple-kafka.yml up --detach**
-1. Increase replication in case one of your broker goes down : https://kafka.apache.org/documentation/#topicconfigs  
-** **
-2. Stop one of your brokers with docker
-3. Describe your topic, check the ISR (in-sync replica) config : https://kafka.apache.org/documentation/#design_ha
-4. Restart your stopped broker
-5. Check again your topic
+0. use `docker-compose-multiple-kafka.yml` to start 2 more brokers : `docker-compose -f docker-compose-multiple-kafka.yml up`
+1. Create a new topic with a replication factor (RF) of 3, in case one of your broker goes down : https://kafka.apache.org/documentation/#topicconfigs
+2. Describe your topic, notice where the different partition are replicated 
+3. now, stop one of your brokers with docker
+4. Describe your topic, check and notice the difference with the ISR (in-sync replica) config : https://kafka.apache.org/documentation/#design_ha
+5. Restart your stopped broker
+6. Check again your topic
+7. Bonus: you can do this operation while keeping producing message to this kafka topic with Conduktor
