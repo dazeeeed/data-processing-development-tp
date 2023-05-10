@@ -50,26 +50,45 @@ docker exec -ti tp-docker-kafka_kafka1_1 bash
 
 Pay attention to the `KAFKA_ADVERTISED_LISTENERS` config from the docker-compose file.
 
-2. Create a "mailbox" - a topic with the default config : https://kafka.apache.org/documentation/#quickstart_createtopic
+2. Create a "mailbox" - a topic with the default config : https://kafka.apache.org/documentation/#quickstart_createtopic  
+**kafka-topics --create --topic mailbox --bootstrap-server localhost:9092**
+---
 3. Check on which Kafka broker the topic is located using `--describe`
-5. Send events to a topic on one terminal : https://kafka.apache.org/documentation/#quickstart_send
-4. Keep reading events from a topic from one terminal : https://kafka.apache.org/documentation/#quickstart_consume
+**kafka-topics --describe --bootstrap-server localhost:9092**
+---
+4. Send events to a topic on one terminal : https://kafka.apache.org/documentation/#quickstart_send  
+**kafka-console-producer --topic mailbox --bootstrap-server localhost:9092**
+---
+5. Keep reading events from a topic from one terminal : https://kafka.apache.org/documentation/#quickstart_consume  
+**kafka-console-consumer --topic mailbox --from-beginning --bootstrap-server localhost:9092**
 * try the default config
-* what does the `--from-beginning` config do ?
-* what about using the `--group` option for your producer ?
+* what does the `--from-beginning` config do ?  
+**It reads from the beggining of the topic, not from the moment the command was ran.**
+* what about using the `--group` option for your producer ?  
+**Produce messages for the group id of the consumer.**
+---
 6. stop reading
 7. Keep sending some messages to the topic
 
 #### Partition 
 1. Check consumer group with `kafka-console-consumer` : https://kafka.apache.org/documentation/#basic_ops_consumer_group
-* notice if there is [lag](https://univalence.io/blog/articles/kafka-et-les-groupes-de-consommateurs/) for your group
-2. read from a new group, what happened ?
-3. read from a already existing group, what happened ?
+* notice if there is [lag](https://univalence.io/blog/articles/kafka-et-les-groupes-de-consommateurs/) for your group  
+**By default seems to be no consumer groups neither by using console command and also looking at Conduktor.**
+---
+2. read from a new group, what happened ?  
+**kafka-console-consumer --topic mailbox --from-beginning --bootstrap-server localhost:9092 --group my-created-consumer-group**  
+For console consumers it creates a new group, but even after producing some messages by producer without specified group
+it does not show any messages.
+---
+3. read from a already existing group, what happened?  
+**If you specify group for producer then it will also be visible for consumer in a group.**
 4. Recheck consumer group
 
 #### Replication - High Availability
-0. use `docker-compose-multiple-kafka.yml` to start 2 more brokers
-1. Increase replication in case one of your broker goes down : https://kafka.apache.org/documentation/#topicconfigs
+0. use `docker-compose-multiple-kafka.yml` to start 2 more brokers  
+**docker compose -f .\docker-compose-mutiple-kafka.yml up --detach**
+1. Increase replication in case one of your broker goes down : https://kafka.apache.org/documentation/#topicconfigs  
+** **
 2. Stop one of your brokers with docker
 3. Describe your topic, check the ISR (in-sync replica) config : https://kafka.apache.org/documentation/#design_ha
 4. Restart your stopped broker
