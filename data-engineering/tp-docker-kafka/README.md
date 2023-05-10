@@ -10,7 +10,7 @@
 Start multiples kakfa servers (called brokers) using the docker compose recipe `docker-compose.yml` : 
 
 ```bash
-docker-compose -f docker-compose up --detached
+docker compose up --detach
 ```
 
 Check on the docker hub the image used : 
@@ -31,11 +31,6 @@ Download and install : https://www.conduktor.io/download/
 1. Find the `lyrics` topic
 2. Read the first 10 messages of this topic
 3. Using Conduktor, Produce 3 messages into it
-
-### Produce messages using a Scala Client
-
-### Consume messages using a Scala client
-
 
 #### Command CLI
 1. Connect to your kafka cluster with 2 command-line-interface (CLI)
@@ -73,6 +68,7 @@ Pay attention to the `KAFKA_ADVERTISED_LISTENERS` config from the docker-compose
 4. Recheck consumer group
 
 #### Replication - High Availability
+0. use `docker-compose-multiple-kafka.yml` to start 2 more brokers
 1. Increase replication in case one of your broker goes down : https://kafka.apache.org/documentation/#topicconfigs
 2. Stop one of your brokers with docker
 3. Describe your topic, check the ISR (in-sync replica) config : https://kafka.apache.org/documentation/#design_ha
