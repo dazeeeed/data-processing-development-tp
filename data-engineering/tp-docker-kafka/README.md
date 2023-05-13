@@ -92,13 +92,18 @@ it does not show any messages.
 3. read from a already existing group, what happened?  
 **If you specify group for producer then it will also be visible for consumer in a group.**
 4. Recheck consumer group
+---
 
-#### Replication - High Availability
+#### Replication - High Availability (Done on a projector for everyone in the class)
 0. use `docker-compose-multiple-kafka.yml` to start 2 more brokers : `docker-compose -f docker-compose-multiple-kafka.yml up`
 1. Create a new topic with a replication factor (RF) of 3, in case one of your broker goes down : https://kafka.apache.org/documentation/#topicconfigs
 2. Describe your topic, notice where the different partition are replicated 
 3. now, stop one of your brokers with docker
-4. Describe your topic, check and notice the difference with the ISR (in-sync replica) config : https://kafka.apache.org/documentation/#design_ha
+4. Describe your topic, check and notice the difference with the ISR (in-sync replica) config : https://kafka.apache.org/documentation/#design_ha  
+**Number of ISR changed. Replica which was on the broker that was turned off is not shown there anymore in isr, but is shown in replicas.**
+---
 5. Restart your stopped broker
 6. Check again your topic
+**The topic has again the same number of ISR as before, but the assigned leader after stopping of one broker (which was leader before)
+is not changed to the previous state and the new leader becomes still.**
 7. Bonus: you can do this operation while keeping producing message to this kafka topic with Conduktor
